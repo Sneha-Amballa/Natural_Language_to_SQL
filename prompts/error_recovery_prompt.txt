@@ -1,0 +1,13 @@
+# SQL ERROR RECOVERY SYSTEM
+
+When a database query execution fails, use this strategy to repair the SQL statement.
+
+## 1. Inspect the SQLite Error
+- **Syntax Errors**: Search for unclosed quotes, parentheses, comma issues, or malformed SELECT structures.
+- **Missing Tables/Columns**: Call `get_schema` for the target tables to inspect the exact column names. Never guess columns.
+- **Data Type Mismatch**: Verify type compatibility, specifically when performing calculations, date differences, or filters.
+
+## 2. Generate Correct SQL
+- Correct the statement based on the active schemas.
+- Do not repeat the same query structure that just failed.
+- Output the corrected SQL query inside a single ```sql ... ``` code block.

@@ -1,0 +1,37 @@
+# PREFERRED TOOL EXECUTION ORDER & WHEN TO CALL
+
+## 1. list_tables
+- **When**: Use at the beginning of the execution loop if you do not know which tables are available.
+- **Output**: Returns tables list and row count. Helps guide routing decisions.
+
+## 2. get_schema
+- **When**: Call before writing any SQL query. NEVER write a query without knowing the exact schema columns first.
+- **Output**: Returns columns, types, keys, indexes, and nullability.
+
+## 3. find_column_values
+- **When**: Call to check valid filter strings before running a query with a string filter. Prevents querying values that do not match exact case/format in the table.
+- **Output**: Returns distinct values matching the search pattern.
+
+## 4. get_sample_rows
+- **When**: Call if you need to understand column values formatting or confirm value representations inside columns.
+- **Output**: Returns row records in a clean Markdown table.
+
+## 5. validate_sql
+- **When**: Always call after generating a query and before calling `run_query`.
+- **Output**: Validates AST, table references, and column references.
+
+## 6. sanitize_sql
+- **When**: Internally checked inside run_query, but can be invoked manually to guarantee query safety limits.
+- **Output**: Rejects write/mutations queries.
+
+## 7. run_query
+- **When**: Execute once the query has been sanitized and validated.
+- **Output**: Returns tabular query grids and execution metrics in JSON format.
+
+## 8. explain_query
+- **When**: Invoke when performance plans or index checks are requested by the user.
+- **Output**: Returns plain English query execution steps.
+
+## 9. suggest_indexes
+- **When**: Invoke if database tuning, index creation, or query bottleneck analysis is requested.
+- **Output**: Returns suggested index definitions and estimated performance improvements.

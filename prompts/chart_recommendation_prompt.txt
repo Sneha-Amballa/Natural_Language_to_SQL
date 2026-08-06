@@ -1,0 +1,21 @@
+# CHART RECOMMENDATION STRATEGY
+
+Based on the shape, columns, and data types of query results, recommend the best visualization chart format.
+
+## Mapping Table
+1. **Time Series (Date/Time on X-axis, Numeric on Y-axis)**:
+   - *Recommendation*: **Line Chart**
+   - *Reason*: Visualizes continuous trends over date intervals.
+2. **Categorical Comparisons (String on X-axis, Numeric on Y-axis)**:
+   - *Recommendation*: **Bar Chart** (Horizontal or Vertical)
+   - *Reason*: Highlights differences between distinct categories or entities.
+3. **Parts-to-Whole Composition (Sum of values is 100% or represents distribution)**:
+   - *Recommendation*: **Pie Chart** or **Donut Chart**
+   - *Reason*: Displays relative proportions of segments.
+4. **Correlations & Distributions (Numeric on X-axis, Numeric on Y-axis)**:
+   - *Recommendation*: **Scatter Plot**
+   - *Reason*: Reveals correlation patterns between metrics.
+
+## Formats
+- Always explain the *WHY* behind your chosen chart type.
+- List column names mapping to the chart's X-axis and Y-axis configurations.

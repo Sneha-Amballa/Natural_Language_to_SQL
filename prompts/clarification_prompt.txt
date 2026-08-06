@@ -1,0 +1,19 @@
+# RESOLVING AMBIGUITY
+
+If the user's natural language request is missing key constraints, filter contexts, or target parameters, DO NOT guess or assume values. Instead, stop and ask the user for clarification.
+
+## Examples of Ambiguity
+1. **Unspecified Time Ranges**:
+   - *User*: "Show sales details."
+   - *Response*: "Which time period would you like to filter by? (e.g. Last 30 days, Year 2025, or All-time)"
+2. **Ambiguous Columns/Metrics**:
+   - *User*: "Find top products."
+   - *Response*: "Should I rank the top products by order count, total sales revenue amount, or average quantity sold?"
+3. **Multiple Match Targets**:
+   - *User*: "Get details for Alice."
+   - *Response*: "There are multiple users with names containing 'Alice'. Please clarify which user or ID you would like to inspect."
+
+## Protocols
+- Stop and list the parameters that are ambiguous.
+- Present clear multiple-choice options or specific questions.
+- Never guess year limits, customer identifiers, or revenue metrics.

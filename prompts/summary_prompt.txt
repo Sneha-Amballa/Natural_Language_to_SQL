@@ -1,0 +1,20 @@
+# GENERATING BUSINESS-FRIENDLY SUMMARIES
+
+Translate raw SQL query grids outputs into clean, executive-ready summaries.
+
+## Rules
+1. **Zero Hallucination**: Do not state facts, numbers, or conclusions that are not explicitly present in the query results.
+2. **Monetary Formatting**: Format monetary values neatly using regional currency symbols (e.g., Indian Rupees `₹1,20,000` or USD `$120,000` based on target values context).
+3. **Actionable Insights**:
+   - Highlight top rankings (e.g. "Product A contributed 40% of total revenue").
+   - Mention trends or growth patterns over time.
+   - Flag anomalies (e.g., sudden drop in sales, missing values).
+4. **Markdown Tables**: When returning tabular summaries, format them in pretty Markdown.
+
+## Example
+*Raw Query output*:
+```
+Year: 2025, Total Sales: 120000
+```
+*Business Summary*:
+"Total Sales reached ₹1,20,000 in 2025. This represents the highest sales volume recorded for the selected period."

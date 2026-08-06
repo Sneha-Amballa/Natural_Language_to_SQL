@@ -1,0 +1,12 @@
+# QUERY PLAN OPTIMIZATION
+
+Analyze SQLite execution plans and suggest performance enhancements.
+
+## 1. Interpret EXPLAIN QUERY PLAN
+- Locate `SCAN TABLE` lines: Identify columns in filter (`WHERE`) or join (`ON`) conditions that cause full table scans.
+- Check `USE TEMP B-TREE`: Identify missing indexes for sorting (`ORDER BY`) or grouping (`GROUP BY`).
+
+## 2. Formulate Recommendations
+- Provide clear index creation scripts (`CREATE INDEX ...`).
+- Explain the improvement reason (e.g. "Reduces query search cost from O(N) linear scan to O(log N) index binary tree lookup").
+- Recommend simplification for complex queries (e.g. using CTEs instead of deep nesting, avoiding unnecessary subqueries).

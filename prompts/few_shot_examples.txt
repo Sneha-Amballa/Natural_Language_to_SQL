@@ -1,0 +1,275 @@
+# FEW-SHOT EXAMPLES FOR SQL GENERATION & SUMMARIZATION
+
+## Example 1: Simple SELECT with Filter
+- **User**: Find all users from 'New York'.
+- **SQL**:
+```sql
+SELECT id, name, email FROM users WHERE city = 'New York' LIMIT 100;
+```
+- **Summary**: "Found 3 users residing in New York (IDs: 1, 4, 12)."
+
+## Example 2: Inner Join
+- **User**: Show names of customers and their total purchase amounts.
+- **SQL**:
+```sql
+SELECT u.name, SUM(o.amount) AS total_spent 
+FROM users u 
+INNER JOIN orders o ON u.id = o.user_id 
+GROUP BY u.name 
+ORDER BY total_spent DESC 
+LIMIT 100;
+```
+- **Summary**: "Here are the customer purchase summaries. Customer Alice leads spending with a total of $1,200, followed by Bob at $850."
+
+## Example 3: Left Join with Null Check
+- **User**: List users who have not placed any orders.
+- **SQL**:
+```sql
+SELECT u.name, u.email 
+FROM users u 
+LEFT JOIN orders o ON u.id = o.user_id 
+WHERE o.id IS NULL 
+LIMIT 100;
+```
+- **Summary**: "There are 5 users who have not placed any orders yet (including Charlie and David)."
+
+## Example 4: Aggregation (Average and Total)
+- **User**: What is the average order amount and total revenue?
+- **SQL**:
+```sql
+SELECT AVG(amount) AS avg_amount, SUM(amount) AS total_revenue 
+FROM orders;
+```
+- **Summary**: "The average order value is $45.50 and total accumulated revenue is $24,500."
+
+## Example 5: Date Filtering (Year 2025)
+- **User**: Show sales made in the year 2025.
+- **SQL**:
+```sql
+SELECT id, amount, order_date 
+FROM orders 
+WHERE strftime('%Y', order_date) = '2025' 
+LIMIT 100;
+```
+- **Summary**: "There were 15 sales in 2025, totaling $3,450."
+
+## Example 6: Group By with Having
+- **User**: Which products have more than 50 sales?
+- **SQL**:
+```sql
+SELECT product_name, COUNT(id) AS sales_count 
+FROM sales 
+GROUP BY product_name 
+HAVING sales_count > 50 
+ORDER BY sales_count DESC 
+LIMIT 100;
+```
+- **Summary**: "Only Product X (75 sales) and Product Y (52 sales) exceeded the 50-sales threshold."
+
+## Example 7: Ranking with Row Number / Window Function
+- **User**: Rank products by price.
+- **SQL**:
+```sql
+SELECT product_name, price, ROW_NUMBER() OVER (ORDER BY price DESC) AS price_rank 
+FROM products 
+LIMIT 100;
+```
+- **Summary**: "Products ranked by price show Item A in first place ($150) and Item B in second ($120)."
+
+## Example 8: Top-N Query
+- **User**: Who are the top 3 highest spending customers?
+- **SQL**:
+```sql
+SELECT u.name, SUM(o.amount) AS total_spent 
+FROM users u 
+INNER JOIN orders o ON u.id = o.user_id 
+GROUP BY u.name 
+ORDER BY total_spent DESC 
+LIMIT 3;
+```
+- **Summary**: "The top 3 highest spending customers are Alice ($1,200), Bob ($850), and Eve ($600)."
+
+## Example 9: Trend Analysis Over Time
+- **User**: Show monthly sales trends for 2025.
+- **SQL**:
+```sql
+SELECT strftime('%m', order_date) AS month, SUM(amount) AS monthly_sales 
+FROM orders 
+WHERE strftime('%Y', order_date) = '2025' 
+GROUP BY month 
+ORDER BY month ASC;
+```
+- **Summary**: "Sales peaks occurred in March ($1,200) and June ($1,500), while January saw the lowest volume ($400)."
+
+## Example 10: Date Difference Calculation
+- **User**: Calculate days between user signup and first order.
+- **SQL**:
+```sql
+SELECT u.name, julianday(MIN(o.order_date)) - julianday(u.signup_date) AS days_to_first_order 
+FROM users u 
+INNER JOIN orders o ON u.id = o.user_id 
+GROUP BY u.id 
+LIMIT 100;
+```
+- **Summary**: "On average, users place their first order 3.5 days after signing up."
+
+## Example 11: Schema Discovery
+- **User**: What tables exist and what columns are in the users table?
+- **Response**: Calling `list_tables` and `get_schema` with arguments `{"tables": ["users"]}` to answer the user request.
+
+## Example 12: Subquery with IN
+- **User**: Show orders from customers who signed up in 2025.
+- **SQL**:
+```sql
+SELECT id, amount, user_id 
+FROM orders 
+WHERE user_id IN (
+    SELECT id FROM users WHERE strftime('%Y', signup_date) = '2025'
+) 
+LIMIT 100;
+```
+- **Summary**: "Found 8 orders (totaling $850) from users who registered in 2025."
+
+## Example 13: Subquery in FROM Clause
+- **User**: Find the average total spent per user.
+- **SQL**:
+```sql
+SELECT AVG(user_total) AS avg_user_spend 
+FROM (
+    SELECT user_id, SUM(amount) AS user_total 
+    FROM orders 
+    GROUP BY user_id
+);
+```
+- **Summary**: "The average total spend per customer is $145.20."
+
+## Example 14: Count Distinct
+- **User**: How many unique cities do our users live in?
+- **SQL**:
+```sql
+SELECT COUNT(DISTINCT city) AS unique_cities_count FROM users;
+```
+- **Summary**: "There are 12 unique cities represented across our user base."
+
+## Example 15: Safe Division Check
+- **User**: Show product sales profit margin ratio.
+- **SQL**:
+```sql
+SELECT product_name, 
+       CASE WHEN revenue = 0 THEN 0 ELSE profit / revenue END AS profit_margin 
+FROM products_financials 
+LIMIT 100;
+```
+- **Summary**: "Profit margins range from 15% (Product A) to 45% (Product C)."
+
+## Example 16: Handling spaces in column names
+- **User**: List order amounts for matching 'Premium' accounts.
+- **SQL**:
+```sql
+SELECT "Account ID", "Order Amount" 
+FROM "User Accounts" 
+WHERE "Account Status" = 'Premium' 
+LIMIT 100;
+```
+- **Summary**: "Premium accounts order amounts ranges from $50 to $300."
+
+## Example 17: Multi-Table Join (3 tables)
+- **User**: Show user name, product name, and order date.
+- **SQL**:
+```sql
+SELECT u.name AS user_name, p.product_name, o.order_date 
+FROM users u 
+INNER JOIN orders o ON u.id = o.user_id 
+INNER JOIN order_items oi ON o.id = oi.order_id 
+INNER JOIN products p ON oi.product_id = p.id 
+LIMIT 100;
+```
+- **Summary**: "Retrieved product purchased associations, showing Alice bought Product X and Bob bought Product Y."
+
+## Example 18: Aggregation over Joined Tables
+- **User**: Show product category and total items sold.
+- **SQL**:
+```sql
+SELECT p.category, SUM(oi.quantity) AS total_items_sold 
+FROM products p 
+INNER JOIN order_items oi ON p.id = oi.product_id 
+GROUP BY p.category 
+ORDER BY total_items_sold DESC 
+LIMIT 100;
+```
+- **Summary**: "Electronics leads sales volumes (450 items sold), followed by Clothing (210 items sold)."
+
+## Example 19: Case Statements mapping
+- **User**: Categorize orders as High, Medium, or Low.
+- **SQL**:
+```sql
+SELECT id, amount, 
+       CASE 
+           WHEN amount >= 500 THEN 'High' 
+           WHEN amount >= 100 THEN 'Medium' 
+           ELSE 'Low' 
+       END AS amount_category 
+FROM orders 
+LIMIT 100;
+```
+- **Summary**: "Classified 120 orders: 15 High-value (>= $500), 45 Medium-value ($100-$500), and 60 Low-value (< $100)."
+
+## Example 20: Filtering using LIKE
+- **User**: Find products with 'Phone' in their name.
+- **SQL**:
+```sql
+SELECT id, product_name, price 
+FROM products 
+WHERE product_name LIKE '%Phone%' 
+LIMIT 100;
+```
+- **Summary**: "Found 3 matching products: SmartPhone X ($699), HeadPhone Pro ($149), and Phone Case ($29)."
+
+## Example 21: Max values subquery
+- **User**: Find the details of the most expensive order.
+- **SQL**:
+```sql
+SELECT id, user_id, amount, order_date 
+FROM orders 
+WHERE amount = (SELECT MAX(amount) FROM orders);
+```
+- **Summary**: "The most expensive order was ID 45 ($1,500) placed on 2025-06-15 by User ID 3."
+
+## Example 22: Count of records per category matching pattern
+- **User**: Count premium users per city.
+- **SQL**:
+```sql
+SELECT city, COUNT(id) AS premium_count 
+FROM users 
+WHERE status = 'Premium' 
+GROUP BY city 
+ORDER BY premium_count DESC 
+LIMIT 100;
+```
+- **Summary**: "New York has the highest number of premium users (12), followed by San Francisco (8)."
+
+## Example 23: Coalesce for null outputs replacement
+- **User**: Show user name and discount code, replacing nulls with 'None'.
+- **SQL**:
+```sql
+SELECT name, COALESCE(discount_code, 'None') AS applied_discount 
+FROM users 
+LIMIT 100;
+```
+- **Summary**: "Discount codes listing retrieved; 70% of accounts do not have an active discount applied."
+
+## Example 24: Cumulative sum grouping
+- **User**: Show accumulated sales daily.
+- **SQL**:
+```sql
+SELECT order_date, 
+       SUM(amount) OVER (ORDER BY order_date) AS running_total 
+FROM orders 
+GROUP BY order_date 
+LIMIT 100;
+```
+- **Summary**: "Running totals show daily revenue climbing from $500 on Day 1 to $12,500 by Day 10."
+
+## Example 25: Explain Query Plan
+- **User**: Explain how the query for users from Boston runs.
+- **Response**: Explaining index scan operations based on schema catalog searches.

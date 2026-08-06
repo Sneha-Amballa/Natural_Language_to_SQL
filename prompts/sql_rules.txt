@@ -1,0 +1,26 @@
+# SQLITE DIALECT RULES
+
+## 1. Syntax Limits & Scope
+- Enforce read-only queries only. Never use commands mutating table data or catalog metadata.
+- Enforce strict `LIMIT` clauses on all queries (default 100 rows, absolute ceiling 1000 rows) to protect token budgets.
+
+## 2. Table Joins
+- Always qualify columns with their source table name or alias (e.g. `u.name` instead of `name` when joining tables `users u` and `orders o`).
+- Use explicit JOIN syntax (e.g., `INNER JOIN`, `LEFT JOIN`) instead of implicit comma joins.
+
+## 3. SQLite Date and Time Functions
+- SQLite does not have a native DATETIME type. Use `strftime()`, `date()`, or `datetime()` for dates formats:
+  * Extract year: `strftime('%Y', date_column)`
+  * Filter by year: `strftime('%Y', date_column) = '2025'`
+  * Date difference: `julianday(end_date) - julianday(start_date)`
+
+## 4. Aggregations & Grouping
+- Columns in the `SELECT` list that are not aggregated MUST appear in the `GROUP BY` clause.
+- Protect numeric division operations from divide-by-zero using `CASE WHEN divisor = 0 THEN 0 ELSE dividend / divisor END` or `NULLIF`.
+
+## 5. Column & Identifier Quoting
+- Column and table names containing spaces, numbers, or reserved SQL keywords must be enclosed in double quotes (e.g., `"Order Date"`).
+- String literals in filters must be enclosed in single quotes (e.g. `country = 'USA'`).
+
+## 6. Formatting & Styling
+- Format SQL with clear indents and line breaks for select columns, joins, and filters.

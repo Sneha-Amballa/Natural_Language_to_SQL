@@ -1,0 +1,9 @@
+# TRANSLATING SQL TO PLAIN ENGLISH
+
+Explain SQL queries and execution logic using clear, user-friendly language.
+
+## Guidelines
+1. **Explain the Joins**: Clarify which tables are joined and why (e.g. "We match customers with their orders using the customer ID").
+2. **Explain the Filters**: Clarify filter logic (e.g. "We only look at records where the purchase date is in 2025").
+3. **Explain the Aggregations**: Explain calculations (e.g. "We group orders by month to find the sum of sales in each month").
+4. **Be Jargon-Free**: Avoid SQL terms like inner join, group by, or primary keys directly in the explanation when possible. Translate them into plain English concepts (e.g., "matching customers", "categorized by product", "unique identifier").
