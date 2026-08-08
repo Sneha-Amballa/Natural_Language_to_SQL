@@ -13,7 +13,18 @@ from ui.settings import render_api_key_settings
 
 def render_sidebar(upload_dir: str, reset_db_callback, load_demo_db_callback) -> None:
     """Renders configuration sidebar."""
-    st.sidebar.markdown("<h2 style='font-weight:800; font-size:1.5rem;'>⚙️ Configuration</h2>", unsafe_allow_html=True)
+    st.sidebar.markdown(
+        """
+        <div style='margin-bottom: 2rem; display: flex; align-items: center; gap: 10px;'>
+            <div style="background-color: #C08030; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 1.3rem; font-family: 'Playfair Display', serif;">R</div>
+            <div>
+                <h1 style='font-family: "Playfair Display", serif; font-weight: 700; font-size: 1.8rem; margin: 0; color: #1C1E1C; line-height: 1.1;'>Readout</h1>
+                <div style='font-family: "Outfit", sans-serif; font-size: 0.65rem; font-weight: 600; letter-spacing: 1px; color: #7B817C; text-transform: uppercase;'>Text-to-SQL Copilot</div>
+            </div>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
     
     # Render settings input from ui/settings.py
     with st.sidebar:
@@ -24,7 +35,7 @@ def render_sidebar(upload_dir: str, reset_db_callback, load_demo_db_callback) ->
     history_service = SessionHistoryService()
     
     st.sidebar.markdown("---")
-    st.sidebar.markdown("<h3 style='font-weight:700; font-size:1.1rem;'>🕒 Session History</h3>", unsafe_allow_html=True)
+    st.sidebar.markdown("<div style='font-size: 0.75rem; font-weight: 700; color: #7B817C; margin-bottom: 0.5rem; letter-spacing: 0.5px;'>SESSION</div>", unsafe_allow_html=True)
     
     # Ensure current session_id is initialized
     if "session_id" not in st.session_state:
@@ -136,12 +147,49 @@ def render_sidebar(upload_dir: str, reset_db_callback, load_demo_db_callback) ->
             
     # Connection status & Schema Explorer
     if st.session_state.db_manager:
-        st.sidebar.markdown('<div class="status-connected">● Connected</div>', unsafe_allow_html=True)
         db_mgr = st.session_state.db_manager
+        
+        # Fetch size and row count for dataset card styling
+        size_str = "0.0 KB"
+        total_rows = 0
+        try:
+            if st.session_state.db_path and os.path.exists(st.session_state.db_path):
+                size_bytes = os.path.getsize(st.session_state.db_path)
+                if size_bytes > 1024 * 1024:
+                    size_str = f"{size_bytes / (1024*1024):.1f} MB"
+                else:
+                    size_str = f"{size_bytes / 1024:.1f} KB"
+                    
+            tables = db_mgr.get_table_list()
+            for t in tables:
+                res = db_mgr.execute_raw(f"SELECT COUNT(*) FROM {t};")
+                total_rows += res.rows[0][0]
+        except Exception:
+            pass
+            
+        filename = st.session_state.loaded_filename or "Loaded DB"
+        # Display dataset details card
+        st.sidebar.markdown(
+            f"""
+            <div style='margin-top: 1.5rem; margin-bottom: 1.5rem;'>
+                <div style='font-size: 0.75rem; font-weight: 700; color: #7B817C; margin-bottom: 0.5rem; letter-spacing: 0.5px;'>DATASET</div>
+                <div class="card" style="padding: 0.75rem; border-radius: 8px; border: 1px solid #E4E4DC; background-color: #FFFFFF;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.5rem;">📄</span>
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.9rem; color: #1C1E1C; word-break: break-all;">{filename}</div>
+                            <div style="font-size: 0.75rem; color: #7B817C;">{size_str} &middot; {total_rows:,} rows</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         
         try:
             tables = db_mgr.get_table_list()
-            st.sidebar.markdown("<h3 style='margin-top:1.5rem; font-weight:700; font-size:1.1rem;'>🗺️ Schema Explorer</h3>", unsafe_allow_html=True)
+            st.sidebar.markdown("<div style='font-size: 0.75rem; font-weight: 700; color: #7B817C; margin-top: 1.5rem; margin-bottom: 0.5rem; letter-spacing: 0.5px;'>SCHEMA EXPLORER</div>", unsafe_allow_html=True)
             
             for table in tables:
                 with st.sidebar.expander(f"📁 {table}"):

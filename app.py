@@ -26,7 +26,7 @@ if not os.path.exists(UPLOAD_DIR):
 
 # Page configuration
 st.set_page_config(
-    page_title="Text-to-SQL Analytics Copilot",
+    page_title="Readout - Text-to-SQL Analytics Copilot",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -35,63 +35,257 @@ st.set_page_config(
 # Premium aesthetic custom styles
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
     
-    html, body, [class*="css"] {
-        font-family: 'Outfit', sans-serif;
+    /* App-wide background and font resets */
+    html, body, [class*="css"], [data-testid="stAppViewContainer"] {
+        background-color: #F8F8F6 !important;
+        font-family: 'Outfit', sans-serif !important;
+        color: #1C1E1C !important;
     }
     
+    /* Sidebar compact design */
+    [data-testid="stSidebar"], [data-testid="stSidebar"] > div {
+        background-color: #F1F1EC !important;
+        border-right: 1px solid #E4E4DC !important;
+    }
+    [data-testid="stSidebar"] {
+        min-width: 260px !important;
+        max-width: 260px !important;
+    }
+    
+    /* Sidebar text colors */
+    [data-testid="stSidebar"] [class*="css"], [data-testid="stSidebar"] label, [data-testid="stSidebar"] span {
+        color: #2D312E !important;
+    }
+    
+    /* Center main content container like ChatGPT */
+    [data-testid="stAppViewContainer"] [data-testid="stMainFrame"] .block-container {
+        max-width: 800px !important;
+        margin: 0 auto !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    /* Center title and subtitle */
     .main-title {
-        background: linear-gradient(135deg, #FF4B4B 0%, #852DF2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 800;
-        font-size: 2.6rem;
-        margin-bottom: 0.2rem;
+        font-family: 'Playfair Display', serif !important;
+        font-weight: 700;
+        font-size: 2.8rem;
+        color: #1C1E1C !important;
+        margin-bottom: 0.1rem;
+        margin-top: 1rem;
+        line-height: 1.2;
+        text-align: center !important;
     }
     
     .main-subtitle {
-        color: #8C96A8;
-        font-size: 1.1rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .status-connected {
-        background-color: rgba(46, 204, 113, 0.15);
-        color: #2ecc71;
-        padding: 0.25rem 0.6rem;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        display: inline-block;
-        border: 1px solid rgba(46, 204, 113, 0.3);
-    }
-    
-    .status-disconnected {
-        background-color: rgba(231, 76, 60, 0.15);
-        color: #e74c3c;
-        padding: 0.25rem 0.6rem;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        display: inline-block;
-        border: 1px solid rgba(231, 76, 60, 0.3);
-    }
-    
-    .card {
-        background-color: #1E1E2F;
-        border: 1px solid #2D2D44;
-        border-radius: 12px;
-        padding: 1.25rem;
+        font-family: 'Playfair Display', serif !important;
+        font-style: italic;
+        color: #C08030 !important;
+        font-size: 2.0rem;
+        margin-top: 0.1rem;
         margin-bottom: 1rem;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        font-weight: 400;
+        text-align: center !important;
+    }
+    
+    .main-description {
+        color: #555A56;
+        font-size: 1.05rem;
+        margin-bottom: 2rem;
+        max-width: 800px;
+        line-height: 1.5;
+        text-align: center !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+    
+    /* Streamlit tabs overrides to make them pills */
+    button[data-baseweb="tab"] {
+        font-family: 'Outfit', sans-serif !important;
+        background-color: #EFEFED !important;
+        color: #555A56 !important;
+        border: 1px solid #E2E2D9 !important;
+        border-radius: 8px !important;
+        padding: 0.4rem 1rem !important;
+        margin-right: 0.5rem !important;
+        transition: all 0.2s ease-in-out !important;
+        font-weight: 500 !important;
+    }
+    
+    button[data-baseweb="tab"][aria-selected="true"] {
+        background-color: #FFFFFF !important;
+        color: #1C1E1C !important;
+        border: 1px solid #C08030 !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important;
+        font-weight: 600 !important;
+    }
+    
+    /* macOS-style code editor panel styling */
+    .mac-editor-frame {
+        background-color: #FDFDFD;
+        border: 1px solid #E2E2D9;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    
+    .mac-editor-header {
+        background-color: #F2F2EC;
+        border-bottom: 1px solid #E2E2D9;
+        padding: 0.6rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .mac-dots {
+        display: flex;
+        gap: 6px;
+    }
+    
+    .mac-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    .mac-dot.red { background-color: #FF5F56; }
+    .mac-dot.yellow { background-color: #FFBD2E; }
+    .mac-dot.green { background-color: #27C93F; }
+    
+    .mac-filename {
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        color: #7B817C;
+        font-weight: 600;
+    }
+    
+    /* Cards and metrics containers styling */
+    .card {
+        background-color: #FFFFFF !important;
+        border: 1px solid #E4E4DC !important;
+        border-radius: 12px !important;
+        padding: 1.25rem !important;
+        margin-bottom: 1rem !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
     }
     
     .card-title {
-        font-weight: 700;
-        font-size: 1.1rem;
-        color: #E2E8F0;
-        margin-bottom: 0.5rem;
+        font-weight: 700 !important;
+        font-size: 1.05rem !important;
+        color: #1C1E1C !important;
+        margin-bottom: 0.5rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Play/Run action button styling */
+    .stButton>button {
+        border-radius: 20px !important;
+        background-color: #FFFFFF !important;
+        color: #1C1E1C !important;
+        border: 1px solid #C08030 !important;
+        padding: 0.35rem 1.2rem !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    .stButton>button:hover {
+        background-color: #C08030 !important;
+        color: #FFFFFF !important;
+        border-color: #C08030 !important;
+        box-shadow: 0 4px 10px rgba(192, 128, 48, 0.2) !important;
+    }
+    
+    /* Connect status tags */
+    .status-connected {
+        background-color: rgba(46, 204, 113, 0.12) !important;
+        color: #27ae60 !important;
+        padding: 0.3rem 0.75rem !important;
+        border-radius: 20px !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        display: inline-block !important;
+        border: 1px solid rgba(46, 204, 113, 0.25) !important;
+    }
+    
+    .status-disconnected {
+        background-color: rgba(231, 76, 60, 0.12) !important;
+        color: #c0392b !important;
+        padding: 0.3rem 0.75rem !important;
+        border-radius: 20px !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        display: inline-block !important;
+        border: 1px solid rgba(231, 76, 60, 0.25) !important;
+    }
+    
+    /* Scrollable chat style message box adjustment */
+    [data-testid="stChatMessage"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid #E4E4DC !important;
+        border-radius: 12px !important;
+        padding: 1rem !important;
+        margin-bottom: 0.75rem !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.01) !important;
+    }
+    
+    /* Connect mac-editor-frame header with st.code block and st.text_area */
+    .mac-editor-frame + div.element-container pre, 
+    .mac-editor-frame + div[data-testid="element-container"] pre,
+    .mac-editor-frame + pre,
+    .mac-editor-frame + div.element-container textarea, 
+    .mac-editor-frame + div[data-testid="element-container"] textarea,
+    .mac-editor-frame + textarea {
+        border-top-left-radius: 0px !important;
+        border-top-right-radius: 0px !important;
+        margin-top: -1.5rem !important;
+        border-top: none !important;
+        background-color: #FAFAF9 !important;
+        border: 1px solid #E2E2D9 !important;
+    }
+    
+    /* Fit everything in one screen with fixed layout */
+    [data-testid="stAppViewContainer"], .stApp {
+        height: 100vh !important;
+        overflow: hidden !important;
+    }
+    
+    /* Pinned question input box layout & Scrollable messages */
+    .chat-container-wrapper div[data-testid="stVerticalBlock"] {
+        height: calc(100vh - 350px) !important;
+        max-height: calc(100vh - 350px) !important;
+        overflow-y: auto !important;
+        padding-right: 5px;
+    }
+    
+    /* Custom thin scrollbar for chat container */
+    .chat-container-wrapper div[data-testid="stVerticalBlock"]::-webkit-scrollbar {
+        width: 6px;
+    }
+    .chat-container-wrapper div[data-testid="stVerticalBlock"]::-webkit-scrollbar-thumb {
+        background-color: #E4E4DC;
+        border-radius: 3px;
+    }
+    
+    /* Floating rounded ChatGPT-style query box */
+    [data-testid="stChatInput"] {
+        max-width: 800px !important;
+        margin: 0 auto !important;
+        border-radius: 26px !important;
+        border: 1px solid #E4E4DC !important;
+        background-color: #FFFFFF !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+        bottom: 24px !important;
+        padding: 0.2rem 0.5rem !important;
+    }
+    [data-testid="stChatInput"] textarea {
+        border: none !important;
+        background-color: transparent !important;
+        color: #1C1E1C !important;
+        border-radius: 26px !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -232,8 +426,9 @@ render_sidebar(
 )
 
 # Main Workspace Layout
-st.markdown('<div class="main-title">📊 Text-to-SQL Analytics Copilot</div>', unsafe_allow_html=True)
-st.markdown('<div class="main-subtitle">Secure, read-only natural language interface for SQLite databases and CSV files.</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">Ask your data anything.</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-subtitle">Get the query, the read, the chart.</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-description">A secure, natural-language interface for exploring your database — every answer shows its work, so you can trust the SQL before you trust the result.</div>', unsafe_allow_html=True)
 
 if not st.session_state.db_manager:
     # Welcome banner and details when no database is loaded
@@ -265,10 +460,10 @@ if not st.session_state.db_manager:
 else:
     # Database is loaded! Display the workspace Tabs
     tab_chat, tab_sql, tab_visuals, tab_schema = st.tabs([
-        "🤖 AI Analyst",
-        "💻 Raw SQL Executor",
-        "📊 Visualizations",
-        "📋 Full Schema JSON"
+        "Ask",
+        "SQL Editor",
+        "Visualizations",
+        "Schema"
     ])
     
     # ------------------ TAB 1: AI Chat Analyst ------------------

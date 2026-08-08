@@ -17,15 +17,19 @@ def render_chat_tab() -> None:
     if not groq_api_key:
         st.warning("⚠️ Please enter your Groq API key in the sidebar to use AI Analyst.")
         
-    # Display chat messages from st.session_state.chat_history
-    for idx, msg in enumerate(st.session_state.chat_history):
-        with st.chat_message(msg["role"]):
-            if msg["role"] == "user":
-                st.write(msg["content"])
-            else:
-                # Assistant message details rendered sequentially
-                # 1. AI Analyst Explanation
-                st.write(msg["content"])
+    # Display chat messages from st.session_state.chat_history in a scrollable container
+    st.markdown('<div class="chat-container-wrapper">', unsafe_allow_html=True)
+    message_container = st.container(height=550, border=False)
+    st.markdown('</div>', unsafe_allow_html=True)
+    with message_container:
+        for idx, msg in enumerate(st.session_state.chat_history):
+            with st.chat_message(msg["role"]):
+                if msg["role"] == "user":
+                    st.write(msg["content"])
+                else:
+                    # Assistant message details rendered sequentially
+                    # 1. AI Analyst Explanation
+                    st.write(msg["content"])
                 
                 # 2. Optional "Analysis Steps" section
                 if "steps" in msg and msg["steps"]:
@@ -84,17 +88,30 @@ def render_chat_tab() -> None:
                                 st.markdown(f"Status: {status_symbol}")
                                 st.markdown("")
                 
-                # 3. Generated SQL Expander
+                # 3. Generated SQL (macOS editor style)
                 if "sql" in msg and msg["sql"]:
                     corrected_automatically = any(
                         step.get("tool_called") == "run_query" and step.get("status") == "FAILED"
                         for step in msg.get("steps", [])
                     )
-                    with st.expander("📝 Generated SQL"):
-                        st.markdown("*This is the SQL query executed against the database:*")
-                        st.code(msg["sql"], language="sql")
-                        if corrected_automatically:
-                            st.info("SQL corrected automatically after validation error.")
+                    st.markdown(
+                        """
+                        <div class="mac-editor-frame">
+                            <div class="mac-editor-header">
+                                <div class="mac-dots">
+                                    <div class="mac-dot red"></div>
+                                    <div class="mac-dot yellow"></div>
+                                    <div class="mac-dot green"></div>
+                                </div>
+                                <div class="mac-filename">generated_query.sql</div>
+                            </div>
+                        </div>
+                        """, 
+                        unsafe_allow_html=True
+                    )
+                    st.code(msg["sql"], language="sql")
+                    if corrected_automatically:
+                        st.info("SQL corrected automatically after validation error.")
                             
                 # Reconstruct query results
                 df = None
@@ -152,7 +169,7 @@ def render_chat_tab() -> None:
             from services.history_service import SessionHistoryService
             from models.models import ChatMessage
             
-            with st.chat_message("user"):
+            with message_container.chat_message("user"):
                 st.write(user_prompt)
                 
             st.session_state.chat_history.append({"role": "user", "content": user_prompt})
@@ -162,7 +179,7 @@ def render_chat_tab() -> None:
                 "timestamp": time.time()
             })
             
-            with st.chat_message("assistant"):
+            with message_container.chat_message("assistant"):
                 with st.status("AI Analyst is thinking...") as status_block:
                     try:
                         agent = SQLAgent(st.session_state.db_path)
