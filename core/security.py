@@ -16,16 +16,18 @@ class SecurityValidator:
         try:
             # Clean up the sql string and check for basic banned keywords as a pre-filter
             sql_upper = sql.upper().strip()
-            banned_keywords = ["DROP", "DELETE", "INSERT", "UPDATE", "CREATE", "ALTER", "PRAGMA", "ATTACH", "DETACH", "REPLACE"]
+            banned_keywords = ["DROP", "DELETE", "INSERT", "UPDATE", "CREATE", "ALTER", "PRAGMA", "ATTACH", "DETACH", "REPLACE", "TRUNCATE"]
             
             # Simple keyword checks to catch obvious violations
+            import re
             for kw in banned_keywords:
-                # Use word boundary or simple checks to prevent false positives on columns (e.g., "created_at")
-                # A robust check checks if the token exists
-                pass
+                if re.search(r"\b" + re.escape(kw) + r"\b", sql_upper):
+                    return False
 
-            parsed_expressions = sqlglot.parse(sql, read="sqlite")
+            parsed_expressions = [expr for expr in sqlglot.parse(sql, read="sqlite") if expr]
             if not parsed_expressions:
+                return False
+            if len(parsed_expressions) > 1:
                 return False
                 
             for expression in parsed_expressions:

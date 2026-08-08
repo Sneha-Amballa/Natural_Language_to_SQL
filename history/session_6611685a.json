@@ -1,0 +1,48 @@
+{
+  "session_id": "session_6611685a",
+  "messages": [
+    {
+      "role": "user",
+      "content": "How many students received each final grade?"
+    },
+    {
+      "role": "assistant",
+      "content": "The number of students who received each final grade is as follows:\n- A: 284 students\n- B: 354 students\n- C: 261 students\n- D: 89 students\n- F: 12 students",
+      "sql": "SELECT final_grade, COUNT(student_id) FROM student_performance_dataset GROUP BY final_grade;",
+      "df": null,
+      "df_metadata": {
+        "columns": [
+          "final_grade",
+          "COUNT(student_id)"
+        ],
+        "row_count": 5
+      }
+    }
+  ],
+  "events": [
+    {
+      "type": "user_query",
+      "content": "How many students received each final grade?",
+      "timestamp": 1786162276.9411943
+    },
+    {
+      "type": "agent_step",
+      "step": 1,
+      "tool": "run_query",
+      "status": "SUCCESS",
+      "duration": 4.081199993379414,
+      "result": "{\"columns\": [\"final_grade\", \"COUNT(student_id)\"], \"rows\": [[\"A\", 284], [\"B\", 354], [\"C\", 261], [\"D\", 89], [\"F\", 12]], \"row_count\": 5, \"total_db_rows\": 5, \"execution_time_ms\": 1.0236999951303005, \"metadata\": {\"sql\": \"SELECT final_grade, COUNT(student_id) FROM student_performance_dataset GROUP BY final_grade;\", \"truncated\": false}}",
+      "timestamp": 1786162289.5131257
+    },
+    {
+      "type": "assistant_response",
+      "content": "The number of students who received each final grade is as follows:\n- A: 284 students\n- B: 354 students\n- C: 261 students\n- D: 89 students\n- F: 12 students",
+      "timestamp": 1786162289.5135794
+    },
+    {
+      "type": "sql_generation",
+      "sql": "SELECT final_grade, COUNT(student_id) FROM student_performance_dataset GROUP BY final_grade;",
+      "timestamp": 1786162289.5141792
+    }
+  ]
+}

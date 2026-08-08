@@ -1,0 +1,36 @@
+{
+  "session_id": "session_01a932bf",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Count number of records"
+    },
+    {
+      "role": "assistant",
+      "content": "There are 1000 records in the student_performance_dataset table.",
+      "sql": null,
+      "df": null
+    }
+  ],
+  "events": [
+    {
+      "type": "user_query",
+      "content": "Count number of records",
+      "timestamp": 1786163819.591055
+    },
+    {
+      "type": "agent_step",
+      "step": 1,
+      "tool": "count_rows",
+      "status": "SUCCESS",
+      "duration": 1.7318999161943793,
+      "result": "1000",
+      "timestamp": 1786163821.07103
+    },
+    {
+      "type": "assistant_response",
+      "content": "There are 1000 records in the student_performance_dataset table.",
+      "timestamp": 1786163821.0718331
+    }
+  ]
+}

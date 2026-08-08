@@ -1,0 +1,36 @@
+{
+  "session_id": "session_e67d0b76",
+  "messages": [
+    {
+      "role": "user",
+      "content": "How many students are in the dataset?"
+    },
+    {
+      "role": "assistant",
+      "content": "There are 1000 students in the dataset.",
+      "sql": null,
+      "df": null
+    }
+  ],
+  "events": [
+    {
+      "type": "user_query",
+      "content": "How many students are in the dataset?",
+      "timestamp": 1786160846.3358593
+    },
+    {
+      "type": "agent_step",
+      "step": 1,
+      "tool": "count_rows",
+      "status": "SUCCESS",
+      "duration": 2.2184000117704272,
+      "result": "1000",
+      "timestamp": 1786160847.4342828
+    },
+    {
+      "type": "assistant_response",
+      "content": "There are 1000 students in the dataset.",
+      "timestamp": 1786160847.4348416
+    }
+  ]
+}

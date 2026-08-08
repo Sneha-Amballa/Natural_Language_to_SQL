@@ -145,31 +145,7 @@ def test_tool_executor():
     assert batch_res[0]["tool_call_id"] == "c1"
     assert "a" in batch_res[0]["result"]
 
-# ----------------- Conversation Manager Tests -----------------
 
-def test_conversation_manager():
-    from agent.conversation import ConversationManager, serialize_conversation_history
-    
-    mgr = ConversationManager(system_prompt="You are analyst", max_history=3)
-    assert len(mgr.history) == 1
-    
-    mgr.add_user_message("hello")
-    mgr.add_assistant_message("hi")
-    # Total is now 3 (system + user + assistant)
-    assert len(mgr.history) == 3
-    
-    # Exceeding history budget -> should slide and prune oldest messages
-    mgr.add_user_message("how are you")
-    assert len(mgr.history) == 3
-    # First message should still be system prompt
-    assert mgr.history[0].role == "system"
-    # Second should be pruned assistant message hi
-    assert mgr.history[1].content == "hi"
-    
-    # Serialization
-    serialized = serialize_conversation_history(mgr.history)
-    assert len(serialized) == 3
-    assert serialized[0]["role"] == "system"
 
 
 

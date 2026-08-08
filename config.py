@@ -4,6 +4,7 @@ Loads configuration parameters from environment variables or .env file
 with runtime constraints validation.
 """
 
+from typing import Optional
 from pydantic_settings import BaseSettings
 from pydantic import Field, SecretStr
 
@@ -11,7 +12,7 @@ class Settings(BaseSettings):
     """Application configuration loaded from environment or .env file."""
     
     # Groq LLM configuration
-    GROQ_API_KEY: SecretStr = Field(..., env="GROQ_API_KEY")
+    GROQ_API_KEY: Optional[SecretStr] = Field(None, env="GROQ_API_KEY")
     LLM_MODEL: str = Field("llama-3.3-70b-versatile", env="LLM_MODEL")
 
     TEMPERATURE: float = Field(0.0, env="LLM_TEMPERATURE")

@@ -88,14 +88,33 @@ class ValidateSqlTool(BaseTool):
                 meta = self.db_manager.get_schema_metadata(actual_name)
                 table_columns[t_ref] = [col["name"].lower() for col in meta["columns"]]
                 
+            # Build alias mapping
+            alias_map = {}
+            for t_ref in tables_referenced:
+                alias_map[t_ref] = t_ref
+                
+            for expression in parsed:
+                if not expression:
+                    continue
+                for node in expression.walk():
+                    if isinstance(node, exp.Table):
+                        tbl_name = node.name.lower()
+                        alias = node.alias
+                        if alias:
+                            alias_map[alias.lower()] = tbl_name
+                            
             invalid_columns = []
             for t_name, c_name in columns_referenced:
                 c_lower = c_name.lower()
                 if t_name:
                     t_lower = t_name.lower()
-                    if t_lower in table_columns:
-                        if c_lower not in table_columns[t_lower]:
+                    if t_lower in alias_map:
+                        actual_tbl = alias_map[t_lower]
+                        if c_lower not in table_columns.get(actual_tbl, []):
                             invalid_columns.append(f"{t_name}.{c_name}")
+                    else:
+                        # Invalid table alias / reference
+                        invalid_columns.append(f"{t_name}.{c_name}")
                 else:
                     found = False
                     for t_lower, cols in table_columns.items():

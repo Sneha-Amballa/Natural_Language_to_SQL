@@ -108,3 +108,48 @@ def sanitize_filename(text: str) -> str:
     cleaned = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', cleaned)
     return cleaned if cleaned else "file"
 
+def validate_uploaded_file(file_name: str, file_size: int, file_content_prefix: bytes) -> str:
+    """Validates uploaded file metadata and content prefix.
+    
+    Returns 'sqlite' or 'csv', or raises ValueError.
+    """
+    from config import settings
+    
+    # 1. Path/Filename validation & sanitization
+    safe_name = sanitize_filename(file_name)
+    _, ext = os.path.splitext(safe_name.lower())
+    if ext not in (".db", ".sqlite", ".sqlite3", ".csv"):
+        raise ValueError("Unsupported file format. Only SQLite and CSV are allowed.")
+        
+    # 2. File size validation
+    max_size_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    if file_size > max_size_bytes:
+        raise ValueError(f"File exceeds the maximum allowed upload size of {settings.MAX_UPLOAD_SIZE_MB} MB.")
+        
+    # 3. File content validation
+    if ext in (".db", ".sqlite", ".sqlite3"):
+        if not file_content_prefix.startswith(b"SQLite format 3\x00"):
+            raise ValueError("The uploaded file is not a valid SQLite database.")
+        return "sqlite"
+    elif ext == ".csv":
+        # Reject null bytes immediately as they indicate binary data
+        if b"\x00" in file_content_prefix:
+            raise ValueError("The uploaded file could not be parsed as a valid CSV.")
+            
+        # Try to decode as UTF-8
+        try:
+            file_content_prefix.decode("utf-8")
+        except UnicodeDecodeError:
+            # If it fails, check if it starts with UTF-16 BOM
+            if file_content_prefix.startswith(b"\xff\xfe") or file_content_prefix.startswith(b"\xfe\xff"):
+                try:
+                    file_content_prefix.decode("utf-16")
+                except UnicodeDecodeError:
+                    raise ValueError("The uploaded file could not be parsed as a valid CSV.")
+            else:
+                # If no BOM and fails UTF-8, reject it as invalid CSV text
+                raise ValueError("The uploaded file could not be parsed as a valid CSV.")
+        return "csv"
+        
+    raise ValueError("Unsupported file format.")
+

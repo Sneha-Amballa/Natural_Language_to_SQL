@@ -1,0 +1,27 @@
+{
+  "session_id": "session_56abc713",
+  "messages": [
+    {
+      "role": "user",
+      "content": "How many male and female students are there?"
+    },
+    {
+      "role": "assistant",
+      "content": "<function(run_query){\"sql\": \"SELECT gender, COUNT(student_id) FROM student_performance_dataset GROUP BY gender;\"}</function>",
+      "sql": null,
+      "df": null
+    }
+  ],
+  "events": [
+    {
+      "type": "user_query",
+      "content": "How many male and female students are there?",
+      "timestamp": 1786162264.648825
+    },
+    {
+      "type": "assistant_response",
+      "content": "<function(run_query){\"sql\": \"SELECT gender, COUNT(student_id) FROM student_performance_dataset GROUP BY gender;\"}</function>",
+      "timestamp": 1786162265.3902478
+    }
+  ]
+}

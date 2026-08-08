@@ -49,6 +49,8 @@ class SQLAgent:
         from tools.sanitize_sql import SanitizeSqlTool
         from tools.explain_query import ExplainQueryTool
         from tools.suggest_indexes import SuggestIndexesTool
+        from tools.get_column_stats import GetColumnStatsTool
+        from tools.count_rows import CountRowsTool
 
         self.registry.register(ListTablesTool(self.db_path))
         self.registry.register(GetSchemaTool(self.db_path))
@@ -59,6 +61,52 @@ class SQLAgent:
         self.registry.register(SanitizeSqlTool(self.db_path))
         self.registry.register(ExplainQueryTool(self.db_path))
         self.registry.register(SuggestIndexesTool(self.db_path))
+        self.registry.register(GetColumnStatsTool(self.db_path))
+        self.registry.register(CountRowsTool(self.db_path))
+
+    def setup_system_context(self) -> None:
+        """Loads system prompts and database schema context if not already present in memory."""
+        if any(m.get("role") == "system" for m in self.memory.messages):
+            return
+            
+        system_prompt_path = os.path.join("prompts", "system_prompt.txt")
+        sql_rules_path = os.path.join("prompts", "sql_rules.txt")
+        
+        system_content = (
+            "You are an expert AI Data Analyst.\n"
+            "Your goal is to answer the user's question by inspecting the database schema, selecting appropriate tables, and generating correct SQLite queries.\n"
+            "You must use your registered tools. Do not assume database structures. Always query get_schema.\n"
+            "IMPORTANT: Do NOT output manual XML tags (like '<function=...>') in your markdown content. "
+            "Always invoke tools using the native tool calling schema interface."
+        )
+        sql_rules_content = "SQLite Dialect Rules:\n- Only select read-only syntax structures.\n- Enclose column references containing spaces in double quotes.\n- Cast all raw outputs calculations.\n- Enforce LIMIT clauses to protect memory targets."
+        
+        try:
+            if os.path.exists(system_prompt_path):
+                with open(system_prompt_path, "r", encoding="utf-8") as f:
+                    system_content = f.read()
+            if os.path.exists(sql_rules_path):
+                with open(sql_rules_path, "r", encoding="utf-8") as f:
+                    sql_rules_content = f.read()
+        except Exception:
+            pass
+            
+        self.memory.add_message("system", system_content)
+        self.memory.add_message("system", sql_rules_content)
+        
+        # Load dynamic schema cached context
+        try:
+            db_mgr = DatabaseManager(self.db_path)
+            tables = db_mgr.get_table_list()
+            schema_parts = []
+            for table in tables:
+                meta = db_mgr.get_schema_metadata(table)
+                cols_str = ", ".join([f"{c['name']} ({c['type']})" for c in meta["columns"]])
+                schema_parts.append(f"Table: {table}\nColumns: {cols_str}")
+            schema_context = "Database Schema Context:\n" + "\n\n".join(schema_parts)
+            self.memory.add_message("system", schema_context)
+        except Exception as e:
+            self.memory.add_message("system", f"Database Schema Context could not be retrieved: {e}")
 
     def execute(self, user_query: str) -> AgentResponse:
         """Runs agent orchestration execution loop.
@@ -85,40 +133,8 @@ class SQLAgent:
         tool_calls_count = 0
         retries_count = 0
         
-        # Load system prompts if memory is empty
-        if not self.memory.messages:
-            system_prompt_path = os.path.join("prompts", "system_prompt.txt")
-            sql_rules_path = os.path.join("prompts", "sql_rules.txt")
-            
-            system_content = "You are an expert AI Data Analyst.\nYour goal is to answer the user's question by inspecting the database schema, selecting appropriate tables, and generating correct SQLite queries.\nYou must use your registered tools. Do not assume database structures. Always query get_schema."
-            sql_rules_content = "SQLite Dialect Rules:\n- Only select read-only syntax structures.\n- Enclose column references containing spaces in double quotes.\n- Cast all raw outputs calculations.\n- Enforce LIMIT clauses to protect memory targets."
-            
-            try:
-                if os.path.exists(system_prompt_path):
-                    with open(system_prompt_path, "r", encoding="utf-8") as f:
-                        system_content = f.read()
-                if os.path.exists(sql_rules_path):
-                    with open(sql_rules_path, "r", encoding="utf-8") as f:
-                        sql_rules_content = f.read()
-            except Exception:
-                pass
-                
-            self.memory.add_message("system", system_content)
-            self.memory.add_message("system", sql_rules_content)
-            
-            # Load dynamic schema cached context
-            try:
-                db_mgr = DatabaseManager(self.db_path)
-                tables = db_mgr.get_table_list()
-                schema_parts = []
-                for table in tables:
-                    meta = db_mgr.get_schema_metadata(table)
-                    cols_str = ", ".join([f"{c['name']} ({c['type']})" for c in meta["columns"]])
-                    schema_parts.append(f"Table: {table}\nColumns: {cols_str}")
-                schema_context = "Database Schema Context:\n" + "\n\n".join(schema_parts)
-                self.memory.add_message("system", schema_context)
-            except Exception as e:
-                self.memory.add_message("system", f"Database Schema Context could not be retrieved: {e}")
+        # Ensure system prompts and schema metadata context are loaded first
+        self.setup_system_context()
         
         # Add user query to memory
         self.memory.add_message("user", user_query)
@@ -145,14 +161,35 @@ class SQLAgent:
             state_machine.transition_to(AgentState.CALL_TOOL)
             
             llm_start = time.perf_counter()
-            try:
-                message = groq_service.generate_completion(messages, tools=tools_schema)
-                llm_latency_ms += (time.perf_counter() - llm_start) * 1000.0
-            except Exception as e:
+            message = None
+            last_err = None
+            local_messages = list(messages)
+            
+            for attempt in range(settings.MAX_RETRIES + 1):
+                try:
+                    message = groq_service.generate_completion(local_messages, tools=tools_schema)
+                    llm_latency_ms += (time.perf_counter() - llm_start) * 1000.0
+                    last_err = None
+                    break
+                except Exception as e:
+                    last_err = e
+                    err_msg = str(e)
+                    if "tool_use_failed" in err_msg or "Failed to call a function" in err_msg:
+                        warning_text = (
+                            "Your previous tool call attempt was malformed or used invalid argument keys. "
+                            "Please strictly adhere to the defined schemas and required parameter names. "
+                            "For 'count_rows', you must ONLY use 'table_name' (do NOT use 'table')."
+                        )
+                        local_messages.append({"role": "user", "content": warning_text})
+                        logger.warning(f"Groq API tool call formatting failure (attempt {attempt + 1}/{settings.MAX_RETRIES}): {e}")
+                    else:
+                        break
+                        
+            if last_err:
                 state_machine.transition_to(AgentState.FINISHED)
-                logger.error(f"LLM API completion failed: {e}")
+                logger.error(f"LLM API completion failed: {last_err}")
                 return AgentResponse(
-                    response_text=f"Failed to generate response: {e}",
+                    response_text=f"Failed to generate response: {last_err}",
                     steps=steps,
                     metrics=ExecutionMetrics(
                         total_duration_ms=(time.perf_counter() - start_time) * 1000.0,

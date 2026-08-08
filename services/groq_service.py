@@ -15,7 +15,24 @@ class GroqService:
     """Integrates with Groq platform API instances."""
     
     def __init__(self):
-        self.api_key = settings.GROQ_API_KEY.get_secret_value()
+        api_key = None
+        try:
+            import streamlit as st
+            api_key = st.session_state.get("groq_api_key")
+        except Exception:
+            pass
+            
+        if not api_key:
+            import os
+            api_key = os.environ.get("GROQ_API_KEY")
+            
+        if not api_key and settings.GROQ_API_KEY:
+            api_key = settings.GROQ_API_KEY.get_secret_value()
+            
+        if not api_key:
+            raise ValueError("Groq API key is missing.")
+            
+        self.api_key = api_key
         self.client = groq.Groq(api_key=self.api_key)
         
     def generate_completion(self, messages: List[Dict[str, Any]], tools: List[Dict[str, Any]] = None) -> Any:

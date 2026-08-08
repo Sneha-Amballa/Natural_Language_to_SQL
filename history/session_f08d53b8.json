@@ -1,0 +1,27 @@
+{
+  "session_id": "session_f08d53b8",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Count total number of records"
+    },
+    {
+      "role": "assistant",
+      "content": "Failed to generate response: Groq API call failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01ktsgksbne4e8ch7hrcms9yfa` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 99137, Requested 1822. Please try again in 13m48.575999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "sql": null,
+      "df": null
+    }
+  ],
+  "events": [
+    {
+      "type": "user_query",
+      "content": "Count total number of records",
+      "timestamp": 1786162775.9829068
+    },
+    {
+      "type": "assistant_response",
+      "content": "Failed to generate response: Groq API call failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01ktsgksbne4e8ch7hrcms9yfa` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 99137, Requested 1822. Please try again in 13m48.575999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "timestamp": 1786162776.5579772
+    }
+  ]
+}

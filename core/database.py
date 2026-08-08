@@ -85,73 +85,94 @@ class DatabaseManager:
         finally:
             conn.close()
         
+    def _get_cache_key(self, suffix: str) -> str:
+        try:
+            mtime = os.path.getmtime(self.db_path) if os.path.exists(self.db_path) else 0
+        except Exception:
+            mtime = 0
+        return f"{self.db_path}:{mtime}:{suffix}"
+
     def get_table_list(self) -> list:
         """Fetches tables identifiers lists."""
-        conn = self.get_connection(read_only=True)
-        try:
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';")
-            return [row[0] for row in cursor.fetchall()]
-        except Exception as e:
-            raise DatabaseConnectionError(f"Failed to fetch table list: {e}") from e
-        finally:
-            conn.close()
+        from utils.cache import cache_schema
+        cache = cache_schema()
+        key = self._get_cache_key("table_list")
+        
+        def load_tables():
+            conn = self.get_connection(read_only=True)
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';")
+                return [row[0] for row in cursor.fetchall()]
+            except Exception as e:
+                raise DatabaseConnectionError(f"Failed to fetch table list: {e}") from e
+            finally:
+                conn.close()
+                
+        return cache.get(key, loader=load_tables)
 
     def get_schema_metadata(self, table: str) -> dict:
         """Fetches table columns and foreign keys information."""
-        conn = self.get_connection(read_only=True)
-        try:
-            cursor = conn.cursor()
-            
-            # Get table info (cid, name, type, notnull, dflt_value, pk)
-            # Use param binding? No, PRAGMA doesn't accept bindings, so we construct it.
-            # But table names should be validated/safe because they are derived from catalog.
-            cursor.execute(f'PRAGMA table_info("{table}");')
-            columns_info = cursor.fetchall()
-            
-            if not columns_info:
-                # Try unquoted or check if it exists
-                cursor.execute(f"PRAGMA table_info({table});")
+        from utils.cache import cache_schema
+        cache = cache_schema()
+        key = self._get_cache_key(f"schema:{table.lower()}")
+        
+        def load_metadata():
+            conn = self.get_connection(read_only=True)
+            try:
+                cursor = conn.cursor()
+                
+                # Get table info (cid, name, type, notnull, dflt_value, pk)
+                # Use param binding? No, PRAGMA doesn't accept bindings, so we construct it.
+                # But table names should be validated/safe because they are derived from catalog.
+                cursor.execute(f'PRAGMA table_info("{table}");')
                 columns_info = cursor.fetchall()
-            
-            # Get foreign key list (id, seq, table, from, to, on_update, on_delete, match)
-            cursor.execute(f'PRAGMA foreign_key_list("{table}");')
-            fkeys_info = cursor.fetchall()
-            
-            columns = []
-            primary_keys = []
-            for col in columns_info:
-                col_name = col["name"]
-                col_type = col["type"]
-                is_pk = bool(col["pk"])
-                if is_pk:
-                    primary_keys.append(col_name)
                 
-                # Check for foreign key references
-                fkey_ref = None
-                for fk in fkeys_info:
-                    if fk["from"] == col_name:
-                        fkey_ref = {"table": fk["table"], "column": fk["to"]}
-                        break
-                        
-                columns.append({
-                    "name": col_name,
-                    "type": col_type,
-                    "is_primary": is_pk,
-                    "foreign_reference": fkey_ref
-                })
+                if not columns_info:
+                    # Try unquoted or check if it exists
+                    cursor.execute(f"PRAGMA table_info({table});")
+                    columns_info = cursor.fetchall()
                 
-            return {
-                "name": table,
-                "columns": columns,
-                "primary_keys": primary_keys,
-                "foreign_keys": [
-                    {"from": fk["from"], "table": fk["table"], "to": fk["to"]}
-                    for fk in fkeys_info
-                ]
-            }
-        except Exception as e:
-            raise DatabaseConnectionError(f"Failed to fetch schema metadata for table '{table}': {e}") from e
-        finally:
-            conn.close()
+                # Get foreign key list (id, seq, table, from, to, on_update, on_delete, match)
+                cursor.execute(f'PRAGMA foreign_key_list("{table}");')
+                fkeys_info = cursor.fetchall()
+                
+                columns = []
+                primary_keys = []
+                for col in columns_info:
+                    col_name = col["name"]
+                    col_type = col["type"]
+                    is_pk = bool(col["pk"])
+                    if is_pk:
+                        primary_keys.append(col_name)
+                    
+                    # Check for foreign key references
+                    fkey_ref = None
+                    for fk in fkeys_info:
+                        if fk["from"] == col_name:
+                            fkey_ref = {"table": fk["table"], "column": fk["to"]}
+                            break
+                            
+                    columns.append({
+                        "name": col_name,
+                        "type": col_type,
+                        "is_primary": is_pk,
+                        "foreign_reference": fkey_ref
+                    })
+                    
+                return {
+                    "name": table,
+                    "columns": columns,
+                    "primary_keys": primary_keys,
+                    "foreign_keys": [
+                        {"from": fk["from"], "table": fk["table"], "to": fk["to"]}
+                        for fk in fkeys_info
+                    ]
+                }
+            except Exception as e:
+                raise DatabaseConnectionError(f"Failed to fetch schema metadata for table '{table}': {e}") from e
+            finally:
+                conn.close()
+                
+        return cache.get(key, loader=load_metadata)
 

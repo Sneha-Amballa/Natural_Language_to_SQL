@@ -1,0 +1,27 @@
+{
+  "session_id": "session_12529374",
+  "messages": [
+    {
+      "role": "user",
+      "content": "How many students are in the dataset?"
+    },
+    {
+      "role": "assistant",
+      "content": "Failed to generate response: Groq API call failed: Error code: 400 - {'error': {'message': \"Failed to call a function. Please adjust your prompt. See 'failed_generation' for more details.\", 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '<function=count_rows{\"table_name\": \"student_performance_dataset\"}</function>'}}",
+      "sql": null,
+      "df": null
+    }
+  ],
+  "events": [
+    {
+      "type": "user_query",
+      "content": "How many students are in the dataset?",
+      "timestamp": 1786160831.9656494
+    },
+    {
+      "type": "assistant_response",
+      "content": "Failed to generate response: Groq API call failed: Error code: 400 - {'error': {'message': \"Failed to call a function. Please adjust your prompt. See 'failed_generation' for more details.\", 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '<function=count_rows{\"table_name\": \"student_performance_dataset\"}</function>'}}",
+      "timestamp": 1786160832.663418
+    }
+  ]
+}
